@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { items, collections, resources } from "@/lib/db/schema";
-import { eq, ilike, and, sql, desc, asc, count, or } from "drizzle-orm";
+import { eq, ilike, and, sql, desc, asc, count, or, inArray } from "drizzle-orm";
 
 export async function searchItems(opts: {
   q?: string;
@@ -45,11 +45,11 @@ export async function searchItems(opts: {
   const where = and(...conditions);
 
   const orderBy =
-    sort === "year" ? desc(items.yearStart) :
+    sort === "year" ? asc(items.yearStart) :
     sort === "year_asc" ? asc(items.yearStart) :
     sort === "recent" ? desc(items.createdAt) :
     sort === "title_desc" ? desc(items.title) :
-    asc(items.title);
+    asc(items.displayOrder);
 
   const [rows, [{ total }]] = await Promise.all([
     db
@@ -60,14 +60,26 @@ export async function searchItems(opts: {
       .from(items)
       .innerJoin(collections, eq(items.collectionId, collections.id))
       .where(where)
-      .orderBy(orderBy)
+      .orderBy(asc(collections.title), orderBy)
       .limit(limit)
       .offset(offset),
     db.select({ total: count() }).from(items).where(where),
   ]);
 
+  const itemIds = rows.map((r) => r.item.id);
+  const thumbnails = await db
+    .select({ itemId: resources.itemId, url: resources.url })
+    .from(resources)
+    .where(and(inArray(resources.itemId, itemIds), eq(resources.resourceType, "thumbnail")));
+  const thumbnailsByItemId = Object.fromEntries(thumbnails.map((t) => [t.itemId, t.url]));
+
+  const resultsWithThumbnails = rows.map((r) => ({
+    ...r,
+    thumbnailUrl: thumbnailsByItemId[r.item.id] || null,
+  }));
+
   return {
-    results: rows,
+    results: resultsWithThumbnails,
     total,
     page,
     limit,

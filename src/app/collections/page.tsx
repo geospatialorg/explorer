@@ -49,7 +49,7 @@ export default async function CollectionsPage({
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <form className="flex-1 relative" action="/collections" method="get">
+        <form className="flex-1 relative" action={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/collections`} method="get">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             name="q"
@@ -102,7 +102,7 @@ export default async function CollectionsPage({
               {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
                 <a
                   key={p}
-                  href={`/collections?${new URLSearchParams({ ...(q ? { q } : {}), ...(type ? { type } : {}), sort, page: String(p) })}`}
+                  href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/collections?${new URLSearchParams({ ...(q ? { q } : {}), ...(type ? { type } : {}), sort, page: String(p) })}`}
                   className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${p === page ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
                 >
                   {p}

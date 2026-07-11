@@ -7,6 +7,9 @@ export interface CollectionRow {
   keywords: string;
   thumbnail_path: string;
   type: string;
+  item_type: string;
+  download: string;
+  interactive_map: string;
   author: string;
   institution: string;
   license: string;
@@ -16,18 +19,27 @@ export interface CollectionRow {
 }
 
 export interface ItemRow {
+  id: string;
   uuid: string;
-  type: string;
-  spatial: string;
   title: string;
   subtitle: string;
+  type: string;
+  spatial: string;
   year: string;
   language: string;
   keywords: string;
   notes: string;
-  layer_name: string;
-  cog_path: string;
+  author: string;
+  institution: string;
+  license: string;
+  scale: string;
+  projection_crs: string;
+  size_x: string;
+  size_y: string;
   wms_path: string;
+  layer_name: string;
+  layer_name_scan: string;
+  cog_path: string;
   thumbnail_path: string;
   collection_uuid?: string;
   collection_slug?: string;
@@ -36,6 +48,29 @@ export interface ItemRow {
 export interface ParseResult<T> {
   rows: T[];
   errors: Array<{ row: number; message: string }>;
+}
+
+export function parseKeywords(raw: string): string[] {
+  if (!raw?.trim()) return [];
+  return raw.split(/[;,|]+/).map((k) => k.trim()).filter(Boolean);
+}
+
+export function parseYear(raw: string): number | null {
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? null : n;
+}
+
+export function parseExternalLinks(raw: string): Array<{ label: string; url: string }> {
+  if (!raw?.trim()) return [];
+  return raw.split(";").map((part) => {
+    const eqIdx = part.indexOf("=");
+    if (eqIdx > -1) {
+      const label = part.slice(0, eqIdx).trim();
+      const url = part.slice(eqIdx + 1).trim();
+      return { label, url };
+    }
+    return null;
+  }).filter(Boolean) as Array<{ label: string; url: string }>;
 }
 
 export function parseCollectionsCsv(content: string): ParseResult<CollectionRow> {

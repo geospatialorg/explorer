@@ -34,6 +34,7 @@ export async function getItems(opts?: {
   const where = conditions.length ? and(...conditions) : undefined;
 
   const orderBy =
+    sort === "order" ? asc(items.displayOrder) :
     sort === "year" ? desc(items.yearStart) :
     sort === "year_asc" ? asc(items.yearStart) :
     sort === "recent" ? desc(items.createdAt) :
@@ -70,4 +71,29 @@ export async function getItemTypeDistribution(collectionId: string) {
 
 export async function getResourcesByItemId(itemId: string) {
   return db.select().from(resources).where(eq(resources.itemId, itemId));
+}
+
+export async function getThumbnailsByItemIds(itemIds: string[]): Promise<Record<string, string>> {
+  if (!itemIds.length) return {};
+  const rows = await db
+    .select({ itemId: resources.itemId, url: resources.url })
+    .from(resources)
+    .where(and(inArray(resources.itemId, itemIds), eq(resources.resourceType, "thumbnail")));
+  return Object.fromEntries(rows.map((r) => [r.itemId, r.url]));
+}
+
+export async function getNeighboringItems(collectionId: string, currentItemId: string) {
+  // Get all items in collection sorted by displayOrder
+  const allItems = await db
+    .select({ id: items.id, slug: items.slug, title: items.title, displayOrder: items.displayOrder })
+    .from(items)
+    .where(and(eq(items.collectionId, collectionId), eq(items.isPublished, true)))
+    .orderBy(asc(items.displayOrder));
+
+  const currentIndex = allItems.findIndex(item => item.id === currentItemId);
+  
+  return {
+    previous: currentIndex > 0 ? allItems[currentIndex - 1] : null,
+    next: currentIndex < allItems.length - 1 ? allItems[currentIndex + 1] : null,
+  };
 }

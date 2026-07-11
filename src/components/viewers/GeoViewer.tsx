@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Layers2Icon, MaximizeIcon, RefreshCwIcon } from "lucide-react";
+import { Layers2Icon, LoaderCircleIcon } from "lucide-react";
 
 interface Props {
   cogUrl: string;
@@ -13,6 +13,7 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
   const mapInstance = useRef<unknown>(null);
   const [opacity, setOpacity] = useState(100);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -32,7 +33,7 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
         if (!isMounted || !mapRef.current) return;
 
         const encodedPath = encodeURIComponent(cogUrl);
-        const tileUrl = `${titilerUrl}/cog/tiles/{z}/{x}/{y}.png?url=${encodedPath}`;
+        const tileUrl = `${titilerUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedPath}`;
 
         const basemap = new TileLayer({ source: new OSM(), opacity: 1 });
         const cogLayer = new TileLayer({
@@ -62,8 +63,19 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
 
         mapInstance.current = map;
         (mapInstance.current as { cogLayer: unknown }).cogLayer = cogLayer;
+        
+        // Wait for COG layer to load before hiding spinner
+        const cogSource = cogLayer.getSource();
+        if (cogSource) {
+          cogSource.on('tileloadend', () => {
+            if (isMounted) setLoading(false);
+          });
+          cogSource.on('tileloaderror', () => {
+            if (isMounted) setLoading(false);
+          });
+        }
       } catch (err) {
-        if (isMounted) setError("Nu s-a putut încărca harta. Verificați că TiTiler rulează.");
+        if (isMounted) { setError("Nu s-a putut încărca harta. Verificați că TiTiler rulează."); setLoading(false); }
       }
     }
 
@@ -84,6 +96,11 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
         </div>
       ) : (
         <>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/60 rounded-lg z-10">
+              <LoaderCircleIcon className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
           <div ref={mapRef} className="flex-1 rounded-lg overflow-hidden min-h-[400px]" />
           <div className="absolute bottom-4 left-4 bg-white/90 rounded-md shadow px-3 py-2 flex items-center gap-3 text-sm">
             <Layers2Icon className="h-4 w-4 text-muted-foreground" />

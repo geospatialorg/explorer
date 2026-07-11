@@ -30,7 +30,7 @@ export default async function SearchPage({
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto mb-8">
         <h1 className="text-3xl font-bold mb-4 text-center">Căutare</h1>
-        <form action="/search" method="get" className="relative">
+        <form action={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/search`} method="get" className="relative">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input name="q" defaultValue={q} placeholder="Caută în toate colecțiile…" className="pl-12 h-12 text-base rounded-xl" autoFocus />
         </form>
@@ -89,18 +89,18 @@ export default async function SearchPage({
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {results.map(({ item, collection }) => (
-                  <ItemCard key={item.id} item={item} collectionSlug={collection.slug} />
+                {results.map(({ item, collection, thumbnailUrl }) => (
+                  <ItemCard key={item.id} item={item} collectionSlug={collection.slug} thumbnailUrl={thumbnailUrl || undefined} />
                 ))}
               </div>
 
               {pages > 1 && (
                 <div className="flex justify-center gap-2 mt-6">
                   {Array.from({ length: Math.min(pages, 10) }, (_, i) => i + 1).map((p) => (
-                    <a key={p} href={buildUrl({ page: String(p) })}
+                    <Link key={p} href={buildUrl({ page: String(p) })}
                       className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${p === page ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}>
                       {p}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}

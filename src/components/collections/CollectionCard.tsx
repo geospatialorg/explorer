@@ -19,7 +19,7 @@ export function CollectionCard({ collection, itemCount = 0, georefCount = 0 }: P
         <div className="aspect-[4/3] relative bg-muted overflow-hidden">
           {collection.thumbnailPath ? (
             <Image
-              src={collection.thumbnailPath}
+              src={collection.thumbnailPath.startsWith("http") ? collection.thumbnailPath.split("/").map((s, i) => i < 3 ? s : encodeURIComponent(s)).join("/") : collection.thumbnailPath}
               alt={collection.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -53,7 +53,7 @@ export function CollectionCard({ collection, itemCount = 0, georefCount = 0 }: P
             {itemCount > 0 && (
               <span className="flex items-center gap-1">
                 <LayersIcon className="h-3 w-3" />
-                {itemCount} items
+                {itemCount} {collection.itemType || 'items'}
               </span>
             )}
             {georefCount > 0 && (

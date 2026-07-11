@@ -20,7 +20,7 @@ export function ItemCard({ item, collectionSlug, thumbnailUrl }: Props) {
         <div className="aspect-[3/2] relative bg-muted overflow-hidden">
           {thumbnailUrl ? (
             <Image
-              src={thumbnailUrl}
+              src={thumbnailUrl.startsWith("http") ? thumbnailUrl.split("/").map((s, i) => i < 3 ? s : encodeURIComponent(s)).join("/") : thumbnailUrl}
               alt={item.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"

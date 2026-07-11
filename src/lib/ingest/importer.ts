@@ -1,36 +1,16 @@
 import { db } from "@/lib/db";
 import { collections, items, resources } from "@/lib/db/schema";
-import { slugify } from "@/lib/slugify";
-import { eq } from "drizzle-orm";
-import type { CollectionRow, ItemRow } from "./csv-parser";
-
-function parseKeywords(raw: string): string[] {
-  if (!raw?.trim()) return [];
-  return raw.split(/[;,]+/).map((k) => k.trim()).filter(Boolean);
-}
-
-function parseYear(raw: string): number | null {
-  const n = parseInt(raw, 10);
-  return isNaN(n) ? null : n;
-}
+import { eq, and } from "drizzle-orm";
+import slugify from "slugify";
+import { CollectionRow, ItemRow, parseKeywords, parseYear, parseExternalLinks } from "./csv-parser";
+import { parseDownloadField, parseInteractiveMapField } from "@/lib/utils/json-parser";
 
 function parseGeorefStatus(raw: string): string {
   const v = raw?.trim().toLowerCase();
-  if (v === "1" || v === "true" || v === "accurate") return "accurate";
-  if (v === "approximate" || v === "2") return "approximate";
-  if (v === "precise" || v === "3") return "precise";
+  if (v === "1" || v === "true" || v === "accurate" || v === "yes" || v === "da" || v === "georef" || v === "georeferentiat" || v === "georeferençiat") return "accurate";
+  if (v === "approximate" || v === "2" || v === "aproximativ") return "approximate";
+  if (v === "precise" || v === "3" || v === "precis") return "precise";
   return "none";
-}
-
-function parseExternalLinks(raw: string): Array<{ label: string; url: string }> {
-  if (!raw?.trim()) return [];
-  return raw.split(";").map((part) => {
-    const eqIdx = part.indexOf("=");
-    if (eqIdx > -1) {
-      return { label: part.slice(0, eqIdx).trim(), url: part.slice(eqIdx + 1).trim() };
-    }
-    return { label: "Link", url: part.trim() };
-  }).filter((l) => l.url);
 }
 
 export interface IngestResult {
@@ -66,6 +46,13 @@ export async function ingestCollections(
         tags,
         thumbnailPath: row.thumbnail_path || null,
         type: row.type || null,
+        itemType: row.item_type || null,
+        download: (() => {
+          const parsed = parseDownloadField(row.download);
+          if (row.download) console.log(`[DOWNLOAD DEBUG] raw="${row.download}" parsed=`, JSON.stringify(parsed));
+          return parsed;
+        })(),
+        interactiveMap: parseInteractiveMapField(row.interactive_map) ? 'Da' : null,
         author: row.author || null,
         institution: row.institution || null,
         license: row.license || null,
@@ -96,22 +83,27 @@ export async function ingestCollections(
 export async function ingestItems(
   rows: ItemRow[],
   collectionSlug: string
-): Promise<{ inserted: number; updated: number; errors: string[] }> {
+): Promise<{ inserted: number; updated: number; errors: string[]; insertedItems: string[]; updatedItems: string[] }> {
   let inserted = 0;
   let updated = 0;
   const errors: string[] = [];
+  const insertedItems: string[] = [];
+  const updatedItems: string[] = [];
+  console.log(`[DEBUG] ingestItems: Starting import for collection '${collectionSlug}' with ${rows.length} rows`);
 
   const collection = await db.query.collections.findFirst({
     where: eq(collections.slug, collectionSlug),
   });
 
   if (!collection) {
-    return { inserted: 0, updated: 0, errors: [`Collection not found: ${collectionSlug}`] };
+    return { inserted: 0, updated: 0, errors: [`Collection not found: ${collectionSlug}`], insertedItems: [], updatedItems: [] };
   }
 
-  for (const row of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    console.log(`[DEBUG] Processing row ${i + 1}/${rows.length}: "${row.title}" (id: ${row.id || 'null'}, uuid: ${row.uuid || 'null'})`);
     try {
-      const slug = slugify(row.title);
+      let slug = slugify(row.title);
       const year = parseYear(row.year);
       const keywords = parseKeywords(row.keywords);
       const georefStatus = parseGeorefStatus(row.spatial);
@@ -119,12 +111,33 @@ export async function ingestItems(
       const existingById = row.uuid
         ? await db.query.items.findFirst({ where: eq(items.id, row.uuid) })
         : null;
-      const existingBySlug = await db.query.items.findFirst({
-        where: eq(items.slug, `${collectionSlug}-${slug}`),
-      });
-      const existing = existingById ?? existingBySlug;
+      
+      // Generate unique slug: include UUID if available, otherwise check for duplicates
+      let itemSlug: string;
+      if (row.uuid) {
+        itemSlug = `${collectionSlug}-${slug}-${row.uuid.slice(-8)}`;  // Use last 8 chars of UUID
+      } else {
+        // Check for existing items with same slug and append suffix if needed
+        let suffix = 1;
+        let baseSlug = slug;
+        while (true) {
+          const testSlug = suffix === 1 ? baseSlug : `${baseSlug}-${suffix}`;
+          const existingBySlug = await db.query.items.findFirst({
+            where: eq(items.slug, `${collectionSlug}-${testSlug}`),
+          });
+          if (!existingBySlug || (existingById && existingBySlug.id === existingById.id)) {
+            itemSlug = `${collectionSlug}-${testSlug}`;
+            break;
+          }
+          suffix++;
+        }
+      }
+      
+      const existing = existingById;  // Only use UUID for existing detection
 
-      const itemSlug = existing?.slug ?? `${collectionSlug}-${slug}`;
+      const displayOrder = row.id?.trim() ? parseInt(row.id.trim(), 10) : null;
+      const imageSizeX = row.size_x?.trim() ? parseInt(row.size_x.trim(), 10) : null;
+      const imageSizeY = row.size_y?.trim() ? parseInt(row.size_y.trim(), 10) : null;
 
       const data = {
         collectionId: collection.id,
@@ -138,6 +151,9 @@ export async function ingestItems(
         notes: row.notes || null,
         keywords,
         georefStatus,
+        displayOrder: isNaN(displayOrder as number) ? null : displayOrder,
+        imageSizeX: isNaN(imageSizeX as number) ? null : imageSizeX,
+        imageSizeY: isNaN(imageSizeY as number) ? null : imageSizeY,
         validationStatus: "published" as const,
         isPublished: true,
         updatedAt: new Date(),
@@ -150,11 +166,12 @@ export async function ingestItems(
         await db.delete(resources).where(eq(resources.itemId, existing.id));
         itemId = existing.id;
         updated++;
+        updatedItems.push(row.title);
       } else {
-        const idToUse = row.uuid || undefined;
-        const [inserted_item] = await db.insert(items).values({ id: idToUse, ...data }).returning({ id: items.id });
-        itemId = inserted_item.id;
+        const insertedItem = await db.insert(items).values(data).returning({ id: items.id });
+        itemId = insertedItem[0].id;
         inserted++;
+        insertedItems.push(row.title);
       }
 
       const resourcesToInsert = [];
@@ -172,15 +189,27 @@ export async function ingestItems(
         });
       }
 
-      if (row.wms_path?.trim()) {
+      if (row.layer_name_scan?.trim() && row.wms_path?.trim()) {
+        resourcesToInsert.push({
+          itemId,
+          resourceType: "wms_scan",
+          role: "view",
+          url: row.wms_path.trim(),
+          protocol: "OGC:WMS",
+          layerName: row.layer_name_scan.trim(),
+          isPrimary: false,
+        });
+      }
+
+      if (row.wms_path?.trim() && row.layer_name?.trim()) {
         resourcesToInsert.push({
           itemId,
           resourceType: "wms",
           role: "view",
           url: row.wms_path.trim(),
           protocol: "OGC:WMS",
-          layerName: row.layer_name?.trim() || null,
-          isPrimary: !row.cog_path?.trim(),
+          layerName: row.layer_name.trim(),
+          isPrimary: false,
         });
       }
 
@@ -199,9 +228,17 @@ export async function ingestItems(
         await db.insert(resources).values(resourcesToInsert);
       }
     } catch (err) {
-      errors.push(`Row "${row.title}": ${(err as Error).message}`);
+      const errorMsg = `Row ${i + 1} "${row.title}": ${(err as Error).message}`;
+      console.error(`[DEBUG] ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
     }
   }
 
-  return { inserted, updated, errors };
+  console.log(`[DEBUG] ingestItems: Completed - inserted: ${inserted}, updated: ${updated}, errors: ${errors.length}`);
+  console.log(`[DEBUG] Inserted items:`, insertedItems);
+  console.log(`[DEBUG] Updated items:`, updatedItems);
+  if (errors.length > 0) {
+    console.log(`[DEBUG] First 5 errors:`, errors.slice(0, 5));
+  }
+  return { inserted, updated, errors, insertedItems, updatedItems };
 }

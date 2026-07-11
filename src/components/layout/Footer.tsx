@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapIcon } from "lucide-react";
+import { MapIcon, Github } from "lucide-react";
 
 export function Footer() {
   return (
@@ -16,9 +16,20 @@ export function Footer() {
             <Link href="/about" className="hover:text-foreground transition-colors">Despre</Link>
             <Link href="/admin/ingest" className="hover:text-foreground transition-colors">Admin</Link>
           </nav>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} geo-spatial.org
-          </p>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/geospatialorg/explorer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="GitHub"
+            >
+              <Github className="h-5 w-5" />
+            </a>
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} geo-spatial.org
+            </p>
+          </div>
         </div>
       </div>
     </footer>

@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -31,7 +31,7 @@ export default function LoginPage() {
         setError(data.error ?? "Eroare la autentificare");
         return;
       }
-      window.location.href = from;
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${from}`;
     } catch {
       setError("Eroare de rețea. Reîncercați.");
     } finally {

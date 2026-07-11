@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 
 interface IngestResult {
   collections?: { inserted: number; updated: number; errors: string[] };
-  items?: { inserted: number; updated: number; errors: string[] };
+  items?: { inserted: number; updated: number; errors: string[]; insertedItems?: string[]; updatedItems?: string[] };
   error?: string;
 }
 
@@ -36,7 +36,7 @@ export default function AdminIngestPage() {
         formData.append("collectionSlug", collectionSlug);
       }
 
-      const res = await fetch("/api/admin/ingest", { method: "POST", body: formData });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/admin/ingest`, { method: "POST", body: formData });
       const data = await res.json();
       setResult(data);
     } catch (err) {
@@ -150,7 +150,23 @@ export default function AdminIngestPage() {
                 {result.items && (
                   <div className="text-sm space-y-1">
                     <p>Items inserați: <strong>{result.items.inserted}</strong></p>
+                    {result.items.insertedItems && result.items.insertedItems.length > 0 && (
+                      <details className="mt-1">
+                        <summary className="text-green-700 cursor-pointer text-xs">Vezi item-uri inserate</summary>
+                        <ul className="mt-1 space-y-0.5 text-xs text-green-700 max-h-32 overflow-y-auto">
+                          {result.items.insertedItems.map((title, i) => <li key={i}>{title}</li>)}
+                        </ul>
+                      </details>
+                    )}
                     <p>Items actualizați: <strong>{result.items.updated}</strong></p>
+                    {result.items.updatedItems && result.items.updatedItems.length > 0 && (
+                      <details className="mt-1">
+                        <summary className="text-blue-700 cursor-pointer text-xs">Vezi item-uri actualizate</summary>
+                        <ul className="mt-1 space-y-0.5 text-xs text-blue-700 max-h-32 overflow-y-auto">
+                          {result.items.updatedItems.map((title, i) => <li key={i}>{title}</li>)}
+                        </ul>
+                      </details>
+                    )}
                     {result.items.errors.length > 0 && (
                       <details className="mt-2">
                         <summary className="text-destructive cursor-pointer text-xs">{result.items.errors.length} erori</summary>

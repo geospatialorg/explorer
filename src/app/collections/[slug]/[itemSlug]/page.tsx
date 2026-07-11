@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getItemWithResources } from "@/lib/db/queries/items";
+import { getItemWithResources, getNeighboringItems } from "@/lib/db/queries/items";
 import { ViewerSwitcher } from "@/components/viewers/ViewerSwitcher";
-import { BadgeGeoref, BadgeItemType } from "@/components/shared/BadgeGeoref";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatYear } from "@/lib/utils";
 import { ITEM_TYPE_LABELS } from "@/lib/constants";
-import { ArrowLeftIcon, CalendarIcon, GlobeIcon, FileTextIcon, TagIcon, InfoIcon } from "lucide-react";
+import { ArrowLeftIcon, CalendarIcon, GlobeIcon, FileTextIcon, TagIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,9 @@ export default async function ItemPage({
   const titilerUrl = process.env.NEXT_PUBLIC_TITILER_URL;
   const geoserverUrl = process.env.NEXT_PUBLIC_GEOSERVER_URL;
 
+  // Get neighboring items for navigation
+  const neighboring = collection ? await getNeighboringItems(collection.id, item.id) : { previous: null, next: null };
+
   const bbox: [number, number, number, number] | undefined =
     item.bboxWest != null && item.bboxSouth != null && item.bboxEast != null && item.bboxNorth != null
       ? [item.bboxWest, item.bboxSouth, item.bboxEast, item.bboxNorth]
@@ -33,7 +36,7 @@ export default async function ItemPage({
     item.itemType && { label: "Tip", value: ITEM_TYPE_LABELS[item.itemType] ?? item.itemType },
     (item.yearStart || item.yearEnd) && { label: "An", value: formatYear(item.yearStart, item.yearEnd) },
     item.language && { label: "Limbă", value: item.language },
-    item.georefStatus && { label: "Georeferențiere", value: item.georefStatus },
+    item.georefStatus && { label: "Georeferențiere", value: item.georefStatus === "none" ? "Nu" : "Da" },
     item.scale && { label: "Scară", value: item.scale },
     item.projectionCrs && { label: "CRS", value: item.projectionCrs },
     item.author && { label: "Autor", value: item.author },
@@ -58,12 +61,37 @@ export default async function ItemPage({
       <div className="grid lg:grid-cols-5 gap-8">
         {/* Viewer area - 3/5 width */}
         <div className="lg:col-span-3 space-y-4">
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between">
+            {neighboring.previous ? (
+              <Link href={`/collections/${params.slug}/${neighboring.previous.slug}`}>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <ChevronLeftIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </Button>
+              </Link>
+            ) : (
+              <div />
+            )}
+            
+            <div className="text-center text-sm text-muted-foreground max-w-xs truncate">
+              {item.title}
+            </div>
+            
+            {neighboring.next ? (
+              <Link href={`/collections/${params.slug}/${neighboring.next.slug}`}>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <span className="hidden sm:inline">Urmator</span>
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <div />
+            )}
+          </div>
+
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <BadgeItemType type={ITEM_TYPE_LABELS[item.itemType] ?? item.itemType} />
-                <BadgeGeoref status={item.georefStatus} />
-              </div>
               <h1 className="text-xl font-bold leading-tight">{item.title}</h1>
               {item.subtitle && <p className="text-sm text-muted-foreground italic">{item.subtitle}</p>}
             </div>
@@ -76,6 +104,8 @@ export default async function ItemPage({
               bbox={bbox}
               titilerUrl={titilerUrl}
               geoserverUrl={geoserverUrl}
+              imageSizeX={item.imageSizeX}
+              imageSizeY={item.imageSizeY}
             />
           </div>
         </div>
@@ -117,7 +147,7 @@ export default async function ItemPage({
               </h2>
               <Separator />
               <div className="flex flex-wrap gap-2">
-                {item.keywords.map((kw) => (
+                {item.keywords.flatMap((kw) => kw.split(/[|;,]+/).map((k) => k.trim()).filter(Boolean)).map((kw) => (
                   <Link key={kw} href={`/search?q=${encodeURIComponent(kw)}`}>
                     <Badge variant="secondary" className="text-xs hover:bg-primary hover:text-primary-foreground cursor-pointer">
                       {kw}

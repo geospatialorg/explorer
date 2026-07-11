@@ -16,17 +16,17 @@ export const RESOURCE_ROLES = [
 ] as const;
 
 export const GEOREF_LABELS: Record<string, string> = {
-  none: "Negeoref.",
-  approximate: "Aproximativ",
-  accurate: "Precis",
-  precise: "Foarte precis",
+  none: "Negeoreferențiat",
+  approximate: "Georeferențiat",
+  accurate: "Georeferențiat",
+  precise: "Georeferențiat",
 };
 
 export const GEOREF_COLORS: Record<string, string> = {
   none: "bg-gray-100 text-gray-600",
-  approximate: "bg-yellow-100 text-yellow-700",
+  approximate: "bg-blue-100 text-blue-700",
   accurate: "bg-blue-100 text-blue-700",
-  precise: "bg-green-100 text-green-700",
+  precise: "bg-blue-100 text-blue-700",
 };
 
 export const ITEM_TYPE_LABELS: Record<string, string> = {

@@ -1,0 +1,19 @@
+services:
+  titiler:
+    image: ghcr.io/developmentseed/titiler:latest
+    container_name: titiler
+    restart: unless-stopped
+    command: uvicorn titiler.application.main:app --host 0.0.0.0 --port 80 --workers 1
+    ports:
+      - "127.0.0.1:8000:80"
+    volumes:
+      - /data:/data:ro
+    environment:
+      - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
+      - CPL_VSIL_CURL_ALLOWED_EXTENSIONS=.tif,.tiff,.geotiff
+      - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
+      - GDAL_HTTP_MULTIPLEX=YES
+      - GDAL_HTTP_VERSION=2
+      - VSI_CACHE=TRUE
+      - GDAL_CACHEMAX=200
+      - CPL_VSIL_USE_TEMP_FILE_FOR_RANDOM_WRITE=NO
