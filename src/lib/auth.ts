@@ -43,7 +43,7 @@ export async function verifySession(token: string, secret: string): Promise<stri
 }
 
 export function checkCredentials(username: string, password: string): boolean {
-  const raw = process.env.ADMIN_CREDENTIALS ?? "";
+  const raw = (process.env.ADMIN_CREDENTIALS ?? "").trim().replace(/^["']|["']$/g, "");
   return raw.split(",").some((pair) => {
     const sep = pair.indexOf(":");
     if (sep === -1) return false;

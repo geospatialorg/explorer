@@ -29,7 +29,11 @@ export async function getItems(opts?: {
   }
   if (q) conditions.push(ilike(items.title, `%${q}%`));
   if (type) conditions.push(eq(items.itemType, type));
-  if (georef) conditions.push(eq(items.georefStatus, georef));
+  if (georef === "yes" || georef === "true") {
+    conditions.push(sql`${items.georefStatus} != 'none'`);
+  } else if (georef) {
+    conditions.push(eq(items.georefStatus, georef));
+  }
 
   const where = conditions.length ? and(...conditions) : undefined;
 

@@ -37,7 +37,11 @@ export async function searchItems(opts: {
     if (coll) conditions.push(eq(items.collectionId, coll.id));
   }
   if (type) conditions.push(eq(items.itemType, type));
-  if (georef) conditions.push(eq(items.georefStatus, georef));
+  if (georef === "yes" || georef === "true") {
+    conditions.push(sql`${items.georefStatus} != 'none'`);
+  } else if (georef) {
+    conditions.push(eq(items.georefStatus, georef));
+  }
   if (yearMin) conditions.push(sql`${items.yearStart} >= ${yearMin}`);
   if (yearMax) conditions.push(sql`${items.yearEnd} <= ${yearMax}`);
   if (hasVector) conditions.push(eq(items.hasVectorDerivative, true));

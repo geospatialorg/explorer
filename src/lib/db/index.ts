@@ -8,7 +8,7 @@ let _db: DrizzleDB | null = null;
 
 function getDb(): DrizzleDB {
   if (!_db) {
-    const url = process.env.DATABASE_URL;
+    const url = process.env.DATABASE_URL?.trim().replace(/^["']|["']$/g, "");
     if (!url) throw new Error("DATABASE_URL environment variable is not set");
     const client = postgres(url, { max: 10 });
     _db = drizzle(client, { schema });

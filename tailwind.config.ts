@@ -9,7 +9,33 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
       colors: {
+        ink: {
+          DEFAULT: "#1E3448",
+          secondary: "#3D4F60",
+          muted: "#5B6B7A",
+          light: "#B9C6D2",
+          lighter: "#D5DEE6",
+          surface: "#29445C",
+          border: "#3D5A73",
+          pill: "#4A6680",
+        },
+        vermilion: {
+          DEFAULT: "#C2462E",
+          light: "#E8674F",
+          dark: "#8F2F1E",
+          tint: "#FBEAE6",
+        },
+        surface: {
+          DEFAULT: "#F3F4F6",
+          thumb: "#EEF0F3",
+          border: "#E1E5EA",
+          input: "#C9D1D9",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

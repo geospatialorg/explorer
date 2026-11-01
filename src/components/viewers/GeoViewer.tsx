@@ -1,17 +1,22 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Layers2Icon, LoaderCircleIcon } from "lucide-react";
+import { LoaderCircleIcon } from "lucide-react";
 
 interface Props {
   cogUrl: string;
   bbox?: [number, number, number, number];
   titilerUrl?: string;
+  opacity?: number;
 }
 
-export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }: Props) {
+export function GeoViewer({
+  cogUrl,
+  bbox,
+  titilerUrl = "http://localhost:8000",
+  opacity = 100,
+}: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<unknown>(null);
-  const [opacity, setOpacity] = useState(100);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,24 +68,28 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
 
         mapInstance.current = map;
         (mapInstance.current as { cogLayer: unknown }).cogLayer = cogLayer;
-        
-        // Wait for COG layer to load before hiding spinner
+
         const cogSource = cogLayer.getSource();
         if (cogSource) {
-          cogSource.on('tileloadend', () => {
+          cogSource.on("tileloadend", () => {
             if (isMounted) setLoading(false);
           });
-          cogSource.on('tileloaderror', () => {
+          cogSource.on("tileloaderror", () => {
             if (isMounted) setLoading(false);
           });
         }
-      } catch (err) {
-        if (isMounted) { setError("Nu s-a putut încărca harta. Verificați că TiTiler rulează."); setLoading(false); }
+      } catch {
+        if (isMounted) {
+          setError("Nu s-a putut încărca harta. Verificați că TiTiler rulează.");
+          setLoading(false);
+        }
       }
     }
 
     initMap();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [cogUrl, bbox, titilerUrl]);
 
   useEffect(() => {
@@ -89,29 +98,22 @@ export function GeoViewer({ cogUrl, bbox, titilerUrl = "http://localhost:8000" }
   }, [opacity]);
 
   return (
-    <div className="relative w-full h-full flex flex-col">
+    <div className="relative w-full h-full flex flex-col bg-[#EEF1EC]">
       {error ? (
-        <div className="flex-1 flex items-center justify-center bg-muted rounded-lg p-6 text-center text-sm text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center p-6 text-center text-[14px] text-[#5B6B7A]">
           <p>{error}</p>
         </div>
       ) : (
         <>
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/60 rounded-lg z-10">
-              <LoaderCircleIcon className="h-8 w-8 animate-spin text-primary" />
+            <div className="absolute inset-0 flex items-center justify-center bg-[#EEF1EC]/60 z-10">
+              <LoaderCircleIcon className="h-8 w-8 animate-spin text-[#1E3448]" />
             </div>
           )}
-          <div ref={mapRef} className="flex-1 rounded-lg overflow-hidden min-h-[400px]" />
-          <div className="absolute bottom-4 left-4 bg-white/90 rounded-md shadow px-3 py-2 flex items-center gap-3 text-sm">
-            <Layers2Icon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Opacitate:</span>
-            <input
-              type="range" min={0} max={100} value={opacity}
-              onChange={(e) => setOpacity(Number(e.target.value))}
-              className="w-20 h-1 accent-primary"
-            />
-            <span className="text-xs w-8 text-right">{opacity}%</span>
-          </div>
+          <div ref={mapRef} className="flex-1 w-full h-full min-h-[400px]" />
+          <span className="absolute right-3 bottom-2.5 text-[12px] text-[#3D4F60] bg-white/95 px-2 py-1 rounded-[4px] pointer-events-none z-10">
+            © OpenStreetMap contributors
+          </span>
         </>
       )}
     </div>
