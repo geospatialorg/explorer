@@ -14,9 +14,9 @@ git pull
 
 echo "==> Building Docker image..."
 docker build -t geospatialorg-explorer \
-  --build-arg NEXT_PUBLIC_BASE_PATH="/explorer" \
+  --build-arg NEXT_PUBLIC_BASE_PATH="" \
   --build-arg NEXT_PUBLIC_SITE_TITLE="geo-spatial.org Explorer" \
-  --build-arg NEXT_PUBLIC_SITE_URL="https://services.geo-spatial.org/explorer" \
+  --build-arg NEXT_PUBLIC_SITE_URL="https://explorer.geo-spatial.org" \
   --build-arg NEXT_PUBLIC_TITILER_URL="https://services.geo-spatial.org/titiler" \
   --build-arg NEXT_PUBLIC_GEOSERVER_URL="https://services.geo-spatial.org/geoserver" \
   .
@@ -25,6 +25,7 @@ echo "==> Restarting container..."
 docker rm -f geospatialorg-explorer 2>/dev/null || true
 
 docker run -d --name geospatialorg-explorer \
+  --restart unless-stopped \
   --add-host=host.docker.internal:host-gateway \
   --env-file "$ENV_FILE" \
   -p 3001:3000 \

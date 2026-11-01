@@ -223,7 +223,7 @@ Fiecare pagină item include în `<head>`:
   "isPartOf": {
     "@type": "Collection",
     "name": "Atlas Militar 1916",
-    "url": "https://services.geo-spatial.org/explorer/collections/atlas-militar-1916"
+    "url": "https://explorer.geo-spatial.org/collections/atlas-militar-1916"
   },
   "thumbnailUrl": "/explorer/api/items/atlas-militar-1916/plansa-xii-braila/thumbnail",
   "license": "https://creativecommons.org/licenses/by/4.0/",

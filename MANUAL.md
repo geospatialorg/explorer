@@ -1,6 +1,6 @@
 # Manual de Utilizare — geo-spatial.org Explorer
 
-**URL public:** `https://services.geo-spatial.org/explorer`  
+**URL public:** `https://explorer.geo-spatial.org`  
 **Versiune aplicație:** 0.1.0  
 **Stack:** Next.js 14 · PostgreSQL + PostGIS · Drizzle ORM · PM2 · TiTiler · GeoServer · OpenLayers · Nginx
 
@@ -35,12 +35,12 @@ Internet
    ▼
 [Nginx :443]  ← reverse proxy + SSL
    │
-   ├── /explorer/*  →  [Next.js :3001]  ← aplicația principală
-   │                        │
-   │                        ├── PostgreSQL :25432  ← baza de date
-   │                        └── (server-side env vars)
+   ├── explorer.geo-spatial.org/*  →  [Next.js :3001]  ← aplicația principală
+   │                                       │
+   │                                       ├── PostgreSQL :25432  ← baza de date
+   │                                       └── (server-side env vars)
    │
-   └── /titiler/*  →  [TiTiler :8000]  ← vizualizare Cloud Optimized GeoTIFF
+   └── services.geo-spatial.org/titiler/*  →  [TiTiler :8000]  ← vizualizare Cloud Optimized GeoTIFF
                            │
                            └── /data/cog/*  ← fișiere COG pe disk
 
@@ -57,14 +57,14 @@ Internet
 
 ## 2. Variabile de mediu (.env)
 
-Fișier: `/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/.env`
+Fișier: `/storage/apps/explorer/.env`
 
 | Variabilă | Valoare | Descriere |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://explorer:***@localhost:25432/explorer` | Conexiune PostgreSQL |
-| `NEXT_PUBLIC_BASE_PATH` | `/explorer` | Prefixul URL al aplicației |
+| `NEXT_PUBLIC_BASE_PATH` | `""` | Prefixul URL al aplicației (gol pe subdomeniul dedicat) |
 | `NEXT_PUBLIC_SITE_TITLE` | `geo-spatial.org Explorer` | Titlu afișat în browser |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3001` | URL intern (server-side) |
+| `NEXT_PUBLIC_SITE_URL` | `https://explorer.geo-spatial.org` | URL public aplicație |
 | `TITILER_URL` | `http://localhost:8000` | URL intern TiTiler (server-side) |
 | `NEXT_PUBLIC_TITILER_URL` | `https://services.geo-spatial.org/titiler` | URL public TiTiler (browser) |
 | `TITILER_DATA_DIR` | `/data/cog` | Director fișiere COG |
@@ -81,14 +81,14 @@ Fișier: `/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/.env`
 
 ## 3. Componenta: Aplicația Next.js
 
-**Locație:** `/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/`  
+**Locație:** `/storage/apps/explorer/`  
 **Port:** `3001`  
 **Node.js version:** 18+ (verifică cu `node -v`)
 
 ### Build
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 npm run build
 ```
 
@@ -101,14 +101,14 @@ Build-ul durează ~1-3 minute. Generează folderul `.next/`.
 ### Start manual (fără PM2)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 npm run start -- --port 3001
 ```
 
 ### Mod development (cu hot-reload)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 npm run dev
 ```
 
@@ -117,7 +117,7 @@ npm run dev
 ### Instalare dependențe (după clone sau update)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 npm install
 ```
 
@@ -134,19 +134,19 @@ npm install
 ### Verificare conexiune
 
 ```bash
-psql postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer -c "SELECT COUNT(*) FROM collections;"
+psql postgresql://explorer:<PAROLA_DB>@localhost:25432/explorer -c "SELECT COUNT(*) FROM collections;"
 ```
 
 ### Conectare interactivă
 
 ```bash
-psql postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer
+psql postgresql://explorer:<PAROLA_DB>@localhost:25432/explorer
 ```
 
 ### Drizzle Studio (interfață web DB)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 npm run db:studio
 ```
 
@@ -158,14 +158,14 @@ Deschide browser la `https://local.drizzle.studio` — interfață vizuală pent
 
 PM2 menține aplicația Next.js rulând în background și o repornește automat la crash sau reboot server.
 
-**Config:** `/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/ecosystem.config.js`  
+**Config:** `/storage/apps/explorer/ecosystem.config.js`  
 **Loguri:** `/home/ubuntu/logs/`
 
 ### Comenzi esențiale
 
 ```bash
 # Pornire aplicație
-pm2 start /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/ecosystem.config.js
+pm2 start /storage/apps/explorer/ecosystem.config.js
 
 # Oprire
 pm2 stop geo-spatial-explorer
@@ -175,7 +175,7 @@ pm2 restart geo-spatial-explorer
 
 # Restart complet cu reload env (dacă s-au schimbat variabile .env)
 pm2 delete geo-spatial-explorer
-pm2 start /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/ecosystem.config.js
+pm2 start /storage/apps/explorer/ecosystem.config.js
 
 # Status
 pm2 status
@@ -193,7 +193,7 @@ pm2 logs geo-spatial-explorer --lines 100
 ### Procedura standard de update aplicație
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 # 1. Build
 npm run build
@@ -224,12 +224,12 @@ TiTiler este un serviciu Python care servește tile-uri din fișiere **Cloud Opt
 **Port intern:** `8000`  
 **URL public (prin Nginx):** `https://services.geo-spatial.org/titiler`  
 **Rulat ca:** container Docker  
-**Config:** `/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/docker-compose.titiler.yml`
+**Config:** `/storage/apps/explorer/docker-compose.titiler.yml`
 
 ### Pornire
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 docker compose -f docker-compose.titiler.yml up -d
 ```
 
@@ -325,17 +325,22 @@ Nginx funcționează ca reverse proxy, rutând cererile externe către serviciil
 ```nginx
 server {
     listen 443 ssl;
-    server_name services.geo-spatial.org;
+    server_name explorer.geo-spatial.org;
 
     # Aplicația Next.js
-    location /explorer/ {
-        proxy_pass http://127.0.0.1:3001/explorer/;
+    location / {
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
+}
+
+server {
+    listen 443 ssl;
+    server_name services.geo-spatial.org;
 
     # TiTiler
     location /titiler/ {
@@ -345,6 +350,18 @@ server {
         proxy_read_timeout 120s;
     }
 }
+```
+
+### Obținere certificat SSL cu Certbot
+
+1. Creează inițial blocul `server` în `/etc/nginx/sites-available/explorer.geo-spatial.org` pe portul `80`, activează-l în `sites-enabled` și rulează `sudo nginx -t && sudo nginx -s reload`.
+2. Generează certificatul Let's Encrypt și configurează automat HTTPS în Nginx:
+```bash
+sudo certbot --nginx -d explorer.geo-spatial.org
+```
+3. Testează reînnoirea automată:
+```bash
+sudo certbot renew --dry-run
 ```
 
 ### Comenzi Nginx
@@ -370,7 +387,7 @@ sudo systemctl status nginx
 ### De la zero (prima instalare)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 # 1. Instalare dependențe Node.js
 npm install
@@ -400,7 +417,7 @@ sudo nginx -t && sudo nginx -s reload
 ### Update aplicație (cod nou)
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 npm run build
 pm2 restart geo-spatial-explorer
@@ -409,7 +426,7 @@ pm2 restart geo-spatial-explorer
 ### Update cu modificări .env
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 # Modifică .env
 nano .env
@@ -430,7 +447,7 @@ Există două metode de import: **prin interfața web admin** sau **prin CLI**.
 
 ### Metoda 1: Import prin interfața admin (recomandat)
 
-1. Mergi la `https://services.geo-spatial.org/explorer/admin`
+1. Mergi la `https://explorer.geo-spatial.org/admin`
 2. Autentifică-te cu credențialele admin
 3. Click pe **„Import CSV"** în meniu
 4. Selectează tipul de fișier (Colecții sau Items)
@@ -442,7 +459,7 @@ Există două metode de import: **prin interfața web admin** sau **prin CLI**.
 ### Metoda 2: Import prin CLI
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 # Setează căile în .env:
 # CSV_COLLECTIONS_PATH=./data/collections.csv
@@ -466,8 +483,8 @@ npm run ingest
 
 ## 11. Panoul de administrare
 
-**URL:** `https://services.geo-spatial.org/explorer/admin`  
-**Credențiale:** `admin` / `gW16k6rEj10w`
+**URL:** `https://explorer.geo-spatial.org/admin`  
+**Credențiale:** `admin` / `<PAROLA_ADMIN>`
 
 ### Secțiuni disponibile
 
@@ -583,7 +600,7 @@ Fișier: `collections.csv`
 După orice modificare în `src/lib/db/schema.ts`:
 
 ```bash
-cd /storage/volumes/geoserver-1-storage/geo-spatial.org-explorer
+cd /storage/apps/explorer
 
 # Generare fișier migrare
 npm run db:generate
@@ -598,7 +615,7 @@ npm run db:push
 ### Backup baza de date
 
 ```bash
-pg_dump postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer \
+pg_dump postgresql://explorer:<PAROLA_DB>@localhost:25432/explorer \
   --format=custom \
   --file=/backup/explorer-$(date +%Y%m%d).dump
 ```
@@ -607,7 +624,7 @@ pg_dump postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer \
 
 ```bash
 pg_restore \
-  --dbname=postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer \
+  --dbname=postgresql://explorer:<PAROLA_DB>@localhost:25432/explorer \
   /backup/explorer-20260409.dump
 ```
 
@@ -669,13 +686,13 @@ tail -f /var/log/nginx/error.log
 
 ```bash
 # Next.js
-curl -s -o /dev/null -w "%{http_code}" https://services.geo-spatial.org/explorer
+curl -s -o /dev/null -w "%{http_code}" https://explorer.geo-spatial.org
 
 # TiTiler
 curl -s http://localhost:8000/healthz
 
 # PostgreSQL
-psql postgresql://explorer:t69uf7O1FsxV@localhost:25432/explorer -c "SELECT 1;"
+psql postgresql://explorer:<PAROLA_DB>@localhost:25432/explorer -c "SELECT 1;"
 
 # PM2 status
 pm2 status

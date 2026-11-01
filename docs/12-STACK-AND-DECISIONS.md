@@ -377,7 +377,7 @@ POSTGRES_DB=geospatial_explorer
 # ============================================================
 NEXT_PUBLIC_BASE_PATH=/explorer
 NEXT_PUBLIC_SITE_TITLE=geo-spatial.org Explorer
-NEXT_PUBLIC_SITE_URL=https://services.geo-spatial.org/explorer
+NEXT_PUBLIC_SITE_URL=https://explorer.geo-spatial.org
 NODE_ENV=production
 
 # ============================================================

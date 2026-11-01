@@ -218,7 +218,7 @@ Toate endpoint-urile API returnează JSON cu structură consistentă:
   "isPartOf": {
     "@type": "Collection",
     "name": "Atlas Militar 1916",
-    "url": "https://services.geo-spatial.org/explorer/collections/atlas-militar-1916"
+    "url": "https://explorer.geo-spatial.org/collections/atlas-militar-1916"
   },
   "thumbnailUrl": "/explorer/api/items/atlas-militar-1916/plansa-xii-braila/thumbnail",
   "license": "https://creativecommons.org/licenses/by/4.0/",
@@ -238,8 +238,8 @@ Toate endpoint-urile API returnează JSON cu structură consistentă:
 ```html
 <meta property="og:title" content="Planșa XII — Brăila și Galați" />
 <meta property="og:description" content="Planșă topografică militară, Atlas Militar 1916" />
-<meta property="og:image" content="https://services.geo-spatial.org/explorer/api/items/atlas-militar-1916/plansa-xii-braila/thumbnail" />
-<meta property="og:url" content="https://services.geo-spatial.org/explorer/collections/atlas-militar-1916/plansa-xii-braila" />
+<meta property="og:image" content="https://explorer.geo-spatial.org/api/items/atlas-militar-1916/plansa-xii-braila/thumbnail" />
+<meta property="og:url" content="https://explorer.geo-spatial.org/collections/atlas-militar-1916/plansa-xii-braila" />
 <meta property="og:type" content="website" />
 ```
 
@@ -257,5 +257,5 @@ User-agent: *
 Allow: /explorer/
 Disallow: /explorer/api/admin/
 Disallow: /explorer/api/tiles/
-Sitemap: https://services.geo-spatial.org/explorer/sitemap.xml
+Sitemap: https://explorer.geo-spatial.org/sitemap.xml
 ```

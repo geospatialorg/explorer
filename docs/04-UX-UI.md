@@ -162,7 +162,7 @@ graph TD
 │                                      │  ANR, cota 234/1916   │
 │                                      │                       │
 ├──────────────────────────────────────┴───────────────────────┤
-│  Permalink: https://services.geo-spatial.org/explorer/       │
+│  Permalink: https://explorer.geo-spatial.org/                │
 │  collections/atlas-militar-1916/plansa-xii-braila            │
 └──────────────────────────────────────────────────────────────┘
 ```

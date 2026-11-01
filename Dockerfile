@@ -16,7 +16,7 @@ COPY . .
 # Pass them via --build-arg or a .env file mounted at build time.
 ARG NEXT_PUBLIC_BASE_PATH=""
 ARG NEXT_PUBLIC_SITE_TITLE="geo-spatial.org Explorer"
-ARG NEXT_PUBLIC_SITE_URL="https://services.geo-spatial.org/explorer"
+ARG NEXT_PUBLIC_SITE_URL="https://explorer.geo-spatial.org"
 ARG NEXT_PUBLIC_TITILER_URL="http://localhost:8000"
 ARG NEXT_PUBLIC_GEOSERVER_URL="https://services.geo-spatial.org/geoserver"
 ARG NEXT_PUBLIC_GA_MEASUREMENT_ID=""

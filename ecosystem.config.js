@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'geo-spatial-explorer',
-      script: '/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer/node_modules/.bin/next',
+      script: '/storage/apps/explorer/node_modules/.bin/next',
       args: 'start --port 3001',
-      cwd: '/storage/volumes/geoserver-1-storage/geo-spatial.org-explorer',
+      cwd: '/storage/apps/explorer',
       watch: false,
       instances: 1,
       autorestart: true,
