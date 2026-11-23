@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { parseCollectionsCsv, parseItemsCsv } from "@/lib/ingest/csv-parser";
 import { ingestCollections, ingestItems } from "@/lib/ingest/importer";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   try {
     const formData = await req.formData();
     const mode = formData.get("mode") as string;
